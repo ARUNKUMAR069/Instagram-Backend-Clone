@@ -3,7 +3,7 @@ var router = express.Router();
 const UserModel = require('./users');
 const passport = require('passport');
 const localStrategy = require('passport-local');
-const upload = require('./multer');
+const upload = require('./multer')
 
 passport.use(new localStrategy(UserModel.authenticate()));
 /* GET home page. */
@@ -20,16 +20,18 @@ router.get('/login', function (req, res, next) {
 
 // Protected Routes Starting
 // Profile
-router.get('/profile', isLoggedIn, function (req, res, next) {
-  res.render('profile', { title: 'Express' });
+router.get('/profile', isLoggedIn, async function (req, res, next) {
+  const user = await UserModel.findOne({ username: req.session.passport.user });
+  res.render('profile', { title: 'Express', user });
 });
 // Feed
 router.get('/feed', isLoggedIn, function (req, res) {
   res.render('feed')
 });
 // Update
-router.get('/edit', function (req, res) {
-  res.render('edit')
+router.get('/edit', async function (req, res) {
+  const user = await UserModel.findOne({ username: req.session.passport.user });
+  res.render('edit', { user })
 });
 //  Protected Routes Ending
 
@@ -72,15 +74,31 @@ router.get('/logout', function (req, res) {
 
 
 // Upload
-router.post('/upload', upload.single('file'), async function (req, res) {
-  
-  if (!req.file) {
-    return res.status(400).send('Please upload a file')
-  }
-  const user=await UserModel.findOneAndUpdate({username:req.session.passport.user});
-  res.send('File uploaded successfully')
+router.post('/upload', isLoggedIn, upload.single('file'), async function (req, res) {
 
+  const user = await UserModel.findOne({ username: req.session.passport.user });
+  if (req.file) {
+    user.profileImage = req.file.filename;
+    await user.save();
+    res.redirect('/profile')
+  }
+  res.send('No file selected')
 });
+
+
+// Update
+router.post("/update", isLoggedIn, async function (req, res) {
+  const user = await UserModel.findOneAndUpdate(
+    { username: req.session.passport.user },
+    { username: req.body.username, name: req.body.name, bio: req.body.bio },
+    { new: true }
+  );
+  req.login(user, function (err) {
+    if (err) throw err;
+    res.redirect("/profile");
+  });
+});
+
 
 
 // Custom Middleware

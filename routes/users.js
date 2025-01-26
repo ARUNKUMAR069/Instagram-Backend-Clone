@@ -30,6 +30,10 @@ const userSchema = mongoose.Schema({
   profileImage: {
     type: String
   },
+  bio:{
+    type:String,
+    maxlength:100
+  },
   posts: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
