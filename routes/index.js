@@ -4,6 +4,7 @@ const UserModel = require('./users');
 const passport = require('passport');
 const localStrategy = require('passport-local');
 const upload = require('./multer')
+const postModel = require('./post')
 
 passport.use(new localStrategy(UserModel.authenticate()));
 /* GET home page. */
@@ -34,7 +35,7 @@ router.get('/edit', isLoggedIn, async function (req, res) {
   res.render('edit', { user })
 });
 // Post Upload
-router.get('/upload',  function (req, res) {
+router.get('/upload', isLoggedIn, function (req, res) {
   res.render('upload')
 });
 // Logout
@@ -73,7 +74,7 @@ router.post('/login', passport.authenticate('local', {
 });
 
 // Upload
-router.post('/upload', isLoggedIn , upload.single('image'), async function (req, res) {
+router.post('/upload', isLoggedIn, upload.single('image'), async function (req, res) {
   const user = await UserModel.findOne({ username: req.session.passport.user });
   if (!req.file) {
     res.send('No file selected')
@@ -95,6 +96,23 @@ router.post("/update", isLoggedIn, async function (req, res) {
     if (err) throw err;
     res.redirect("/profile");
   });
+});
+
+// Creating a post
+router.post('/createPost', isLoggedIn, upload.single('image'), async function (req, res) {
+  const user = await UserModel.findOne({ username: req.session.passport.user });
+  if (!req.file) {
+    res.send('No file selected')
+  }
+  const post = new postModel({
+    user: user._id,
+    caption: req.body.caption,
+    picture: req.file.filename,
+  });
+  await post.save();
+  user.posts.push(post);
+  await user.save();
+  res.redirect('/feed')
 });
 
 
