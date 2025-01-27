@@ -33,6 +33,10 @@ router.get('/edit', isLoggedIn, async function (req, res) {
   const user = await UserModel.findOne({ username: req.session.passport.user });
   res.render('edit', { user })
 });
+// Post Upload
+router.get('/upload',  function (req, res) {
+  res.render('upload')
+});
 // Logout
 router.get('/logout', isLoggedIn, function (req, res) {
   req.logout(function (err) {
