@@ -29,10 +29,17 @@ router.get('/feed', isLoggedIn, function (req, res) {
   res.render('feed')
 });
 // Update
-router.get('/edit', async function (req, res) {
+router.get('/edit', isLoggedIn, async function (req, res) {
   const user = await UserModel.findOne({ username: req.session.passport.user });
   res.render('edit', { user })
 });
+// Logout
+router.get('/logout', isLoggedIn, function (req, res) {
+  req.logout(function (err) {
+    if (err) { return next(err) };
+  })
+  res.redirect('/')
+})
 //  Protected Routes Ending
 
 
@@ -58,31 +65,18 @@ router.post('/login', passport.authenticate('local', {
   successRedirect: '/profile',
   failureRedirect: '/login'
 }), function (req, res) {
-
   res.send('login')
 });
 
-
-// Logout
-router.get('/logout', function (req, res) {
-  req.logout(function (err) {
-    if (err) { return next(err) };
-  })
-  res.redirect('/')
-
-})
-
-
 // Upload
-router.post('/upload', isLoggedIn, upload.single('file'), async function (req, res) {
-
+router.post('/upload', isLoggedIn , upload.single('image'), async function (req, res) {
   const user = await UserModel.findOne({ username: req.session.passport.user });
-  if (req.file) {
-    user.profileImage = req.file.filename;
-    await user.save();
-    res.redirect('/profile')
+  if (!req.file) {
+    res.send('No file selected')
   }
-  res.send('No file selected')
+  user.profileImage = req.file.filename;
+  await user.save();
+  res.redirect('/profile')
 });
 
 
