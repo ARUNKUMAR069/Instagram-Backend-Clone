@@ -26,8 +26,10 @@ router.get('/profile', isLoggedIn, async function (req, res, next) {
   res.render('profile', { title: 'Express', user });
 });
 // Feed
-router.get('/feed', isLoggedIn, function (req, res) {
-  res.render('feed')
+router.get('/feed', isLoggedIn,  async function (req, res) {
+ const posts= await postModel.find().populate('user')
+ const user = await UserModel.findOne({ username: req.session.passport.user });
+  res.render('feed',{posts,user})
 });
 // Update
 router.get('/edit', isLoggedIn, async function (req, res) {
@@ -110,7 +112,7 @@ router.post('/createPost', isLoggedIn, upload.single('image'), async function (r
     picture: req.file.filename,
   });
   await post.save();
-  user.posts.push(post);
+  user.posts.push(post._id);
   await user.save();
   res.redirect('/feed')
 });
